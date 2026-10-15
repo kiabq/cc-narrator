@@ -1,0 +1,11 @@
+{
+  "name": "claude-voice-augmented",
+  "owner": { "name": "kiabq" },
+  "plugins": [
+    {
+      "name": "claude-voice-augmented",
+      "source": "./plugin",
+      "description": "ElevenLabs narration for Claude Code sessions."
+    }
+  ]
+}
