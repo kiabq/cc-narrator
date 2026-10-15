@@ -1,6 +1,6 @@
 import pytest
 
-from claude_voice_augmented.prose import chunk, sentences, to_speech
+from cc_narrator.prose import chunk, sentences, to_speech
 
 
 @pytest.mark.parametrize(
@@ -10,7 +10,7 @@ from claude_voice_augmented.prose import chunk, sentences, to_speech
         ("Hello **world**.", "Hello world."),
         ("an *emphasized* word and ~~gone~~ text", "an emphasized word and gone text"),
         ("snake_case_name stays", "snake_case_name stays"),
-        ("Use `cva doctor` first.", "Use cva doctor first."),
+        ("Use `cc-narrate doctor` first.", "Use cc-narrate doctor first."),
         ("Call `__init__` here.", "Call __init__ here."),
         ("Before\n```python\nprint('x')\n```\nAfter.", "Before After."),
         ("~~~\ncode\n~~~\nDone.", "Done."),

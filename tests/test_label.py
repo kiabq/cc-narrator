@@ -1,6 +1,6 @@
 import subprocess
 
-from claude_voice_augmented.label import git_branch, label_for, speak_branch, spell_id
+from cc_narrator.label import git_branch, label_for, speak_branch, spell_id
 
 
 def test_spell_id():

@@ -1,4 +1,4 @@
-"""File-based state shared by hooks and watchers under ~/.cache/claude-voice-augmented/."""
+"""File-based state shared by hooks and watchers under ~/.cache/cc-narrator/."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-DEFAULT_ROOT = Path.home() / ".cache" / "claude-voice-augmented"
-WATCHER_MARKER = "claude_voice_augmented"
+DEFAULT_ROOT = Path.home() / ".cache" / "cc-narrator"
+WATCHER_MARKER = "cc_narrator"
 
 
 def pid_alive(pid: int) -> bool:

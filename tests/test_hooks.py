@@ -5,10 +5,10 @@ import time
 
 import pytest
 
-from claude_voice_augmented.config import Config
-from claude_voice_augmented.control import SessionMeta, SessionState, watcher_running
-from claude_voice_augmented.focus import read_focus, write_focus
-from claude_voice_augmented.hooks import find_claude_pid, handle, main
+from cc_narrator.config import Config
+from cc_narrator.control import SessionMeta, SessionState, watcher_running
+from cc_narrator.focus import read_focus, write_focus
+from cc_narrator.hooks import find_claude_pid, handle, main
 
 VALID = Config(api_key="k", narrator_voice_id="n", announcer_voice_id="a")
 INVALID = Config(api_key="", narrator_voice_id="", announcer_voice_id="",
@@ -170,7 +170,7 @@ def test_main_never_fails(tmp_path):
 
 
 def test_main_prints_system_message(tmp_path, monkeypatch):
-    monkeypatch.setattr("claude_voice_augmented.hooks.load_config", lambda: INVALID)
+    monkeypatch.setattr("cc_narrator.hooks.load_config", lambda: INVALID)
     out = io.StringIO()
     main(stdin=io.StringIO(json.dumps(payload("SessionStart"))), stdout=out, root=tmp_path)
     assert "systemMessage" in json.loads(out.getvalue())
@@ -178,7 +178,7 @@ def test_main_prints_system_message(tmp_path, monkeypatch):
 
 def test_hooks_do_not_import_audio_or_http():
     import subprocess
-    code = ("import sys, claude_voice_augmented.hooks; "
+    code = ("import sys, cc_narrator.hooks; "
             "print([m for m in ('httpx', 'sounddevice') if m in sys.modules])")
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert result.stdout.strip() == "[]"

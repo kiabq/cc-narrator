@@ -3,19 +3,19 @@ import os
 
 import pytest
 
-from claude_voice_augmented.config import Config
-from claude_voice_augmented.control import (
+from cc_narrator.config import Config
+from cc_narrator.control import (
     SessionMeta,
     SessionState,
     announcer_lock,
     read_last_speaker,
     write_last_speaker,
 )
-from claude_voice_augmented.focus import write_focus
-from claude_voice_augmented.player import ANNOUNCER, NARRATOR
-from claude_voice_augmented.transcript import TranscriptReader
-from claude_voice_augmented.tts import TTSAuthError
-from claude_voice_augmented.watcher import Watcher, play_announcement
+from cc_narrator.focus import write_focus
+from cc_narrator.player import ANNOUNCER, NARRATOR
+from cc_narrator.transcript import TranscriptReader
+from cc_narrator.tts import TTSAuthError
+from cc_narrator.watcher import Watcher, play_announcement
 
 SID = "639b1bcb-0000"
 LABEL = "six-three-nine-bravo"

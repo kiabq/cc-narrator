@@ -1,4 +1,4 @@
-"""`cva` command line: hook entry point, watcher process, and manual tools."""
+"""`cc-narrate` command line: hook entry point, watcher process, and manual tools."""
 
 from __future__ import annotations
 
@@ -146,7 +146,7 @@ def cmd_say(text: str, announcer: bool) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="cva", description="Narrate Claude Code sessions.")
+    parser = argparse.ArgumentParser(prog="cc-narrate", description="Narrate Claude Code sessions.")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("hook", help="handle a Claude Code hook event (JSON on stdin)")
     watch = sub.add_parser("watch", help="run the watcher for one session")

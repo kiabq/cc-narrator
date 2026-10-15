@@ -1,7 +1,7 @@
 import os
 import time
 
-from claude_voice_augmented.control import (
+from cc_narrator.control import (
     Announcement,
     SessionMeta,
     SessionState,
@@ -161,8 +161,8 @@ def test_announcer_lock_is_exclusive(tmp_path):
 def test_undecodable_files_do_not_raise(tmp_path):
     import pytest
 
-    from claude_voice_augmented.control import SessionState, list_sessions
-    from claude_voice_augmented.focus import read_focus
+    from cc_narrator.control import SessionState, list_sessions
+    from cc_narrator.focus import read_focus
 
     (tmp_path / "focus").write_bytes(b"\xff\xfe\x80")
     assert read_focus(tmp_path) is None
@@ -180,7 +180,7 @@ def test_undecodable_files_do_not_raise(tmp_path):
 def test_session_id_validation(tmp_path):
     import pytest
 
-    from claude_voice_augmented.control import SessionState
+    from cc_narrator.control import SessionState
 
     for bad in ("", "a/b", "a\\b", "a\0b", ".hidden", "..", "../x"):
         with pytest.raises(ValueError):
@@ -189,7 +189,7 @@ def test_session_id_validation(tmp_path):
 
 
 def test_list_sessions_skips_invalid_dir_names(tmp_path):
-    from claude_voice_augmented.control import list_sessions
+    from cc_narrator.control import list_sessions
 
     (tmp_path / "sessions" / ".hidden").mkdir(parents=True)
     (tmp_path / "sessions" / "good").mkdir()

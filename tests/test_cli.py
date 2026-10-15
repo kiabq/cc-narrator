@@ -1,9 +1,9 @@
 import subprocess
 import sys
 
-from claude_voice_augmented.cli import cmd_narrate, main
-from claude_voice_augmented.control import SessionMeta, SessionState
-from claude_voice_augmented.focus import read_focus, write_focus
+from cc_narrator.cli import cmd_narrate, main
+from cc_narrator.control import SessionMeta, SessionState
+from cc_narrator.focus import read_focus, write_focus
 
 
 def make_session(root, sid="639b0000", cwd="/nonexistent"):
@@ -45,13 +45,13 @@ def test_narrate_unknown_session(tmp_path):
 
 
 def test_watch_without_session_returns_error(tmp_path, monkeypatch):
-    monkeypatch.setattr("claude_voice_augmented.cli.DEFAULT_ROOT", tmp_path)
+    monkeypatch.setattr("cc_narrator.cli.DEFAULT_ROOT", tmp_path)
     assert main(["watch", "missing"]) == 1
 
 
 def test_cli_entry_point_help():
     result = subprocess.run(
-        [sys.executable, "-m", "claude_voice_augmented", "--help"], capture_output=True, text=True
+        [sys.executable, "-m", "cc_narrator", "--help"], capture_output=True, text=True
     )
     assert result.returncode == 0
     for command in ("hook", "watch", "narrate", "doctor", "say"):
@@ -61,13 +61,13 @@ def test_cli_entry_point_help():
 def test_watch_crash_is_logged_and_returns_1(tmp_path, monkeypatch):
     import logging
 
-    monkeypatch.setattr("claude_voice_augmented.cli.DEFAULT_ROOT", tmp_path)
+    monkeypatch.setattr("cc_narrator.cli.DEFAULT_ROOT", tmp_path)
     make_session(tmp_path, "crashy")
 
     def boom():
         raise RuntimeError("kaboom-marker")
 
-    monkeypatch.setattr("claude_voice_augmented.cli.load_config", boom)
+    monkeypatch.setattr("cc_narrator.cli.load_config", boom)
     try:
         assert main(["watch", "crashy"]) == 1
     finally:

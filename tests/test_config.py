@@ -1,11 +1,11 @@
 import pytest
 
-from claude_voice_augmented.config import REQUIRED_KEYS, load_config
+from cc_narrator.config import REQUIRED_KEYS, load_config
 
 REQUIRED = {
     "ELEVENLABS_API_KEY": "key",
-    "CVA_NARRATOR_VOICE_ID": "narrator",
-    "CVA_ANNOUNCER_VOICE_ID": "announcer",
+    "CC_NARRATOR_NARRATOR_VOICE_ID": "narrator",
+    "CC_NARRATOR_ANNOUNCER_VOICE_ID": "announcer",
 }
 
 
@@ -37,8 +37,8 @@ def test_defaults_apply(tmp_path):
 def test_values_come_from_env_file(tmp_path):
     path = env_file(
         tmp_path,
-        "ELEVENLABS_API_KEY=filekey\nCVA_NARRATOR_VOICE_ID=n\nCVA_ANNOUNCER_VOICE_ID=a\n"
-        "CVA_ANNOUNCER_VOLUME=0.2\n",
+        "ELEVENLABS_API_KEY=filekey\nCC_NARRATOR_NARRATOR_VOICE_ID=n\nCC_NARRATOR_ANNOUNCER_VOICE_ID=a\n"
+        "CC_NARRATOR_ANNOUNCER_VOLUME=0.2\n",
     )
     cfg = load_config(env={}, env_path=path)
     assert cfg.api_key == "filekey"
@@ -58,7 +58,8 @@ def test_empty_environment_value_does_not_override_file(tmp_path):
 
 
 def test_bad_number_falls_back_to_default(tmp_path):
-    cfg = load_config(env={**REQUIRED, "CVA_NARRATOR_VOLUME": "loud"}, env_path=tmp_path / "x")
+    env = {**REQUIRED, "CC_NARRATOR_NARRATOR_VOLUME": "loud"}
+    cfg = load_config(env=env, env_path=tmp_path / "x")
     assert cfg.narrator_volume == 1.0
 
 
@@ -67,5 +68,6 @@ def test_bad_number_falls_back_to_default(tmp_path):
     [("false", False), ("0", False), ("no", False), ("off", False), ("true", True), ("YES", True)],
 )
 def test_enabled_by_default_parsing(tmp_path, raw, expected):
-    cfg = load_config(env={**REQUIRED, "CVA_ENABLED_BY_DEFAULT": raw}, env_path=tmp_path / "x")
+    env = {**REQUIRED, "CC_NARRATOR_ENABLED_BY_DEFAULT": raw}
+    cfg = load_config(env=env, env_path=tmp_path / "x")
     assert cfg.enabled_by_default is expected

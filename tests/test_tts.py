@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from claude_voice_augmented.tts import ElevenLabsTTS, TTSAuthError, TTSError
+from cc_narrator.tts import ElevenLabsTTS, TTSAuthError, TTSError
 
 
 def make(handler, sleeps=None):
