@@ -156,3 +156,41 @@ def test_announcer_lock_is_exclusive(tmp_path):
         assert time.monotonic() - start >= 0.1
     with announcer_lock(tmp_path, timeout=0.1) as third:
         assert third
+
+
+def test_undecodable_files_do_not_raise(tmp_path):
+    import pytest
+
+    from claude_voice_augmented.control import SessionState, list_sessions
+    from claude_voice_augmented.focus import read_focus
+
+    (tmp_path / "focus").write_bytes(b"\xff\xfe\x80")
+    assert read_focus(tmp_path) is None
+    s = SessionState(tmp_path, "abc")
+    s.create()
+    (s.dir / "meta.json").write_bytes(b"\xff\xfe")
+    assert s.read_meta() is None
+    (s.dir / "announce").write_bytes(b"\xff\xfe\n")
+    assert s.take_announcements() == []
+    assert not (s.dir / "announce.taking").exists()
+    assert [x.session_id for x in list_sessions(tmp_path)] == ["abc"]
+    del pytest
+
+
+def test_session_id_validation(tmp_path):
+    import pytest
+
+    from claude_voice_augmented.control import SessionState
+
+    for bad in ("", "a/b", "a\\b", "a\0b", ".hidden", "..", "../x"):
+        with pytest.raises(ValueError):
+            SessionState(tmp_path, bad)
+    SessionState(tmp_path, "ok-id_1")
+
+
+def test_list_sessions_skips_invalid_dir_names(tmp_path):
+    from claude_voice_augmented.control import list_sessions
+
+    (tmp_path / "sessions" / ".hidden").mkdir(parents=True)
+    (tmp_path / "sessions" / "good").mkdir()
+    assert [s.session_id for s in list_sessions(tmp_path)] == ["good"]

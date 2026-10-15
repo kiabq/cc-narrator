@@ -19,7 +19,10 @@ NO_SESSION = "No narrator is running for this session."
 def cmd_narrate(action: str, session_id: str, root: Path) -> str:
     # An unsubstituted "${CLAUDE_SESSION_ID}" or empty value falls back to the current session.
     sid = session_id if session_id and not session_id.startswith("$") else read_focus(root) or ""
-    session = SessionState(root, sid) if sid else None
+    try:
+        session = SessionState(root, sid) if sid else None
+    except ValueError:
+        session = None
     if session is None or not session.exists():
         return NO_SESSION
     meta = session.read_meta()
@@ -39,7 +42,7 @@ def _setup_logging(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     handler = logging.handlers.RotatingFileHandler(path, maxBytes=1_000_000, backupCount=3)
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
-    logging.basicConfig(level=logging.INFO, handlers=[handler])
+    logging.basicConfig(level=logging.INFO, handlers=[handler], force=True)
 
 
 def cmd_watch(session_id: str) -> int:
@@ -49,35 +52,39 @@ def cmd_watch(session_id: str) -> int:
     if meta is None:
         return 1
     _setup_logging(logs_dir(root) / f"{session_id}.log")
-    config = load_config()
-    if not config.is_valid:
-        logging.error("config invalid; missing %s", ", ".join(config.missing))
+    try:
+        config = load_config()
+        if not config.is_valid:
+            logging.error("config invalid; missing %s", ", ".join(config.missing))
+            return 1
+
+        from .player import Player
+        from .transcript import TranscriptReader
+        from .tts import ElevenLabsTTS
+        from .watcher import AnnouncerWorker, Watcher, play_announcement
+
+        tts = ElevenLabsTTS(config.api_key, config.tts_model)
+        watchers: list[Watcher] = []
+
+        def on_error(channel: str, exc: BaseException) -> None:
+            if watchers:
+                watchers[0].handle_player_error(channel, exc)
+
+        player = Player(config.narrator_volume, config.announcer_volume, on_error)
+        worker = AnnouncerWorker(
+            lambda line: play_announcement(line, player, tts, config.announcer_voice_id, root)
+        )
+        watcher = Watcher(
+            session, root, config, tts, player, TranscriptReader(Path(meta.transcript_path)),
+            worker.submit,
+        )
+        watchers.append(watcher)
+        logging.info("watching %s (%s)", session_id, meta.transcript_path)
+        watcher.run()
+        return 0
+    except Exception:
+        logging.exception("watcher for %s crashed", session_id)
         return 1
-
-    from .player import Player
-    from .transcript import TranscriptReader
-    from .tts import ElevenLabsTTS
-    from .watcher import AnnouncerWorker, Watcher, play_announcement
-
-    tts = ElevenLabsTTS(config.api_key, config.tts_model)
-    watchers: list[Watcher] = []
-
-    def on_error(channel: str, exc: BaseException) -> None:
-        if watchers:
-            watchers[0].handle_player_error(channel, exc)
-
-    player = Player(config.narrator_volume, config.announcer_volume, on_error)
-    worker = AnnouncerWorker(
-        lambda line: play_announcement(line, player, tts, config.announcer_voice_id, root)
-    )
-    watcher = Watcher(
-        session, root, config, tts, player, TranscriptReader(Path(meta.transcript_path)),
-        worker.submit,
-    )
-    watchers.append(watcher)
-    logging.info("watching %s (%s)", session_id, meta.transcript_path)
-    watcher.run()
-    return 0
 
 
 def cmd_doctor() -> int:

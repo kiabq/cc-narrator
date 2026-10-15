@@ -56,8 +56,14 @@ def atomic_write(path: Path, text: str) -> None:
 def _read_text(path: Path) -> str | None:
     try:
         return path.read_text().strip() or None
-    except OSError:
+    except (OSError, UnicodeDecodeError):
         return None
+
+
+def valid_session_id(session_id: str) -> bool:
+    return bool(session_id) and not (
+        any(c in session_id for c in "/\\\0") or session_id.startswith(".")
+    )
 
 
 @dataclass(frozen=True)
@@ -78,6 +84,8 @@ class Announcement:
 
 class SessionState:
     def __init__(self, root: Path, session_id: str):
+        if not valid_session_id(session_id):
+            raise ValueError(f"invalid session id: {session_id!r}")
         self.session_id = session_id
         self.dir = root / "sessions" / session_id
 
@@ -149,7 +157,8 @@ class SessionState:
         except FileNotFoundError:
             return []
         items: list[Announcement] = []
-        for line in taking.read_text().splitlines():
+        text = taking.read_bytes().decode("utf-8", errors="replace")
+        for line in text.splitlines():
             try:
                 data = json.loads(line)
                 items.append(Announcement(str(data["event"]), float(data["ts"])))
@@ -163,7 +172,11 @@ def list_sessions(root: Path) -> list[SessionState]:
     base = root / "sessions"
     if not base.is_dir():
         return []
-    return [SessionState(root, p.name) for p in base.iterdir() if p.is_dir()]
+    return [
+        SessionState(root, p.name)
+        for p in base.iterdir()
+        if p.is_dir() and valid_session_id(p.name)
+    ]
 
 
 def cleanup_stale(root: Path, now: float, max_age: float = 86400.0) -> list[str]:

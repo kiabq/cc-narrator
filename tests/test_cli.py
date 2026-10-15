@@ -56,3 +56,28 @@ def test_cli_entry_point_help():
     assert result.returncode == 0
     for command in ("hook", "watch", "narrate", "doctor", "say"):
         assert command in result.stdout
+
+
+def test_watch_crash_is_logged_and_returns_1(tmp_path, monkeypatch):
+    import logging
+
+    monkeypatch.setattr("claude_voice_augmented.cli.DEFAULT_ROOT", tmp_path)
+    make_session(tmp_path, "crashy")
+
+    def boom():
+        raise RuntimeError("kaboom-marker")
+
+    monkeypatch.setattr("claude_voice_augmented.cli.load_config", boom)
+    try:
+        assert main(["watch", "crashy"]) == 1
+    finally:
+        for handler in logging.getLogger().handlers[:]:
+            handler.flush()
+            logging.getLogger().removeHandler(handler)
+            handler.close()
+    log = (tmp_path / "logs" / "crashy.log").read_text()
+    assert "Traceback" in log and "kaboom-marker" in log
+
+
+def test_narrate_invalid_session_id(tmp_path):
+    assert cmd_narrate("on", "../x", tmp_path) == "No narrator is running for this session."

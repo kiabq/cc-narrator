@@ -137,7 +137,10 @@ def handle(
     session_id = payload.get("session_id")
     if not isinstance(event, str) or not isinstance(session_id, str) or not session_id:
         return None
-    session = SessionState(root, session_id)
+    try:
+        session = SessionState(root, session_id)
+    except ValueError:
+        return None
 
     if event == "SessionStart":
         cleanup_stale(root, now)

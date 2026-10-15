@@ -29,6 +29,7 @@ from .transcript import TranscriptReader
 from .tts import TTS, TTSAuthError
 
 log = logging.getLogger(__name__)
+MAX_CONSECUTIVE_FAILURES = 50
 AUTH_FAILED_MESSAGE = "Narration disabled: ElevenLabs key rejected."
 
 
@@ -117,7 +118,18 @@ class Watcher:
         return True
 
     def run(self, interval: float = 0.1, sleep: Callable[[float], None] = time.sleep) -> None:
-        while self.tick():
+        failures = 0
+        while True:
+            try:
+                if not self.tick():
+                    break
+                failures = 0
+            except Exception:
+                log.exception("watcher tick failed")
+                failures += 1
+                if failures >= MAX_CONSECUTIVE_FAILURES:
+                    log.error("watcher giving up after %d consecutive failed ticks", failures)
+                    break
             sleep(interval)
         log.info("watcher for %s exiting", self.session.session_id)
 

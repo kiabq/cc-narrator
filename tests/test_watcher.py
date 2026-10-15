@@ -221,3 +221,29 @@ def test_play_announcement_gives_up_when_lock_busy(tmp_path):
     with announcer_lock(tmp_path, timeout=1.0):
         assert not play_announcement("x", player, FakeTTS(), "av", tmp_path, lock_timeout=0.1)
     assert player.calls == []
+
+
+def test_run_survives_tick_exceptions_until_failure_cap(env):
+    sleeps = []
+
+    def bad_tick():
+        raise RuntimeError("boom")
+
+    env.watcher.tick = bad_tick
+    env.watcher.run(sleep=sleeps.append)
+    assert len(sleeps) >= 49
+
+
+def test_run_recovers_from_a_single_tick_exception(env):
+    results = iter([RuntimeError("once"), False])
+
+    def tick():
+        r = next(results)
+        if isinstance(r, Exception):
+            raise r
+        return r
+
+    env.watcher.tick = tick
+    sleeps = []
+    env.watcher.run(sleep=sleeps.append)
+    assert len(sleeps) == 1

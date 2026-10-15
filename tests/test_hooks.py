@@ -193,3 +193,11 @@ def test_find_claude_pid_none_when_absent():
     table = {10: (9, "zsh"), 9: (1, "login")}
     assert find_claude_pid(10, ps=table.get) is None
     assert find_claude_pid(10, ps=lambda pid: None) is None
+
+
+def test_handle_invalid_session_id_is_noop(tmp_path, spawn):
+    for bad in ("../evil", ".x", "a/b"):
+        for event in ("SessionStart", "UserPromptSubmit", "SessionEnd", "Stop"):
+            assert run(event, tmp_path, spawn, session_id=bad) is None
+    assert spawn.calls == []
+    assert not list(tmp_path.iterdir())

@@ -10,7 +10,7 @@ from .control import atomic_write
 def read_focus(root: Path) -> str | None:
     try:
         return (root / "focus").read_text().strip() or None
-    except OSError:
+    except (OSError, UnicodeDecodeError):
         return None
 
 
