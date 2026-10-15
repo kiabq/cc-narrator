@@ -1,0 +1,37 @@
+[project]
+name = "claude-voice-augmented"
+version = "0.1.0"
+description = "Narrate Claude Code sessions with ElevenLabs."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27",
+    "sounddevice>=0.4.6",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+claude-voice-augmented = "claude_voice_augmented.cli:main"
+cva = "claude_voice_augmented.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/claude_voice_augmented"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["live: runs the real claude CLI (opt-in: pytest -m live)"]
+addopts = "-m 'not live'"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
