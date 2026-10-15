@@ -204,3 +204,21 @@ def test_player_routes_channels_and_closes():
     assert announcer_out.samples() == [2]
     player.close()
     assert narrator_out.closed and announcer_out.closed
+
+
+def test_source_iterator_close_error_does_not_hang_channel():
+    class BadClose:
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            raise StopIteration
+
+        def close(self):
+            raise RuntimeError("close failed")
+
+    out = FakeOutput()
+    ch = channel(out)
+    ch.enqueue(lambda: BadClose())
+    ch.play_blocking(lambda: [pcm(4)], timeout=2)
+    assert out.samples() == [4]

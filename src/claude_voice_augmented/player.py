@@ -36,6 +36,10 @@ class Output(Protocol):
     def close(self) -> None: ...
 
 
+# PortAudio init/terminate is process-global: serialize it across all outputs.
+_PORTAUDIO_LOCK = threading.Lock()
+
+
 class SoundDeviceOutput:
     def __init__(self, sample_rate: int = SAMPLE_RATE):
         self._rate = sample_rate
@@ -45,22 +49,25 @@ class SoundDeviceOutput:
         import sounddevice as sd
 
         try:
-            if self._stream is None:
-                self._stream = sd.RawOutputStream(
-                    samplerate=self._rate, channels=1, dtype="int16", latency="low"
-                )
-                self._stream.start()
-            self._stream.write(pcm)
+            with _PORTAUDIO_LOCK:
+                if self._stream is None:
+                    self._stream = sd.RawOutputStream(
+                        samplerate=self._rate, channels=1, dtype="int16", latency="low"
+                    )
+                    self._stream.start()
+                stream = self._stream
+            stream.write(pcm)  # blocking; kept outside the lock so channels play concurrently
         except sd.PortAudioError as exc:
             raise OutputError(str(exc)) from exc
 
     def reopen(self) -> None:
         import sounddevice as sd
 
-        self.close()
-        # Re-scan devices so a newly connected default output is picked up.
-        sd._terminate()
-        sd._initialize()
+        with _PORTAUDIO_LOCK:
+            self.close()
+            # Re-scan devices so a newly connected default output is picked up.
+            sd._terminate()
+            sd._initialize()
 
     def close(self) -> None:
         if self._stream is not None:
@@ -114,10 +121,14 @@ class Clip:
         except BaseException as exc:  # handed to the playing thread
             self._queue.put(exc)
         finally:
-            close = getattr(iterator, "close", None)
-            if close is not None:
-                close()
-            self._queue.put(None)
+            try:
+                close = getattr(iterator, "close", None)
+                if close is not None:
+                    close()
+            except Exception:
+                log.debug("error closing source iterator", exc_info=True)
+            finally:
+                self._queue.put(None)
 
     def chunks(self) -> Iterator[bytes]:
         self.start()
