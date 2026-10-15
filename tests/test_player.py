@@ -2,7 +2,7 @@ import threading
 import time
 from array import array
 
-from claude_voice_augmented.player import (
+from cc_narrator.player import (
     ANNOUNCER,
     NARRATOR,
     Channel,

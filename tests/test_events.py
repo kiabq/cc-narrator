@@ -1,6 +1,6 @@
 import pytest
 
-from claude_voice_augmented.events import ANNOUNCED_EVENTS, announcement_line
+from cc_narrator.events import ANNOUNCED_EVENTS, announcement_line
 
 
 @pytest.mark.parametrize(

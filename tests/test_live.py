@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from claude_voice_augmented.transcript import TranscriptReader
+from cc_narrator.transcript import TranscriptReader
 
 
 @pytest.mark.live

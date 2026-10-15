@@ -28,9 +28,9 @@ from .focus import read_focus, write_focus
 
 
 def spawn_watcher(session_id: str) -> int:
-    """Start `python -m claude_voice_augmented watch <id>` fully detached (like nohup … &)."""
+    """Start `python -m cc_narrator watch <id>` fully detached (like nohup … &)."""
     proc = subprocess.Popen(
-        [sys.executable, "-m", "claude_voice_augmented", "watch", session_id],
+        [sys.executable, "-m", "cc_narrator", "watch", session_id],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,

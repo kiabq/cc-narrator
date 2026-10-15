@@ -1,4 +1,4 @@
-from claude_voice_augmented.focus import read_focus, write_focus
+from cc_narrator.focus import read_focus, write_focus
 
 
 def test_focus_round_trip(tmp_path):

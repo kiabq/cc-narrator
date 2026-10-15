@@ -11,7 +11,7 @@ def fake_watcher():
 
     def start() -> subprocess.Popen:
         proc = subprocess.Popen(
-            [sys.executable, "-c", "import time; time.sleep(30)", "claude_voice_augmented"]
+            [sys.executable, "-c", "import time; time.sleep(30)", "cc_narrator"]
         )
         procs.append(proc)
         return proc

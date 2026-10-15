@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-from claude_voice_augmented.transcript import TextBlock, TranscriptReader
+from cc_narrator.transcript import TextBlock, TranscriptReader
 
 FIXTURE = Path(__file__).parent / "fixtures" / "spike.jsonl"
 

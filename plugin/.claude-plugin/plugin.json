@@ -1,5 +1,5 @@
 {
-  "name": "claude-voice-augmented",
+  "name": "cc-narrator",
   "version": "0.1.0",
   "description": "Narrates the current Claude Code session with ElevenLabs and announces other sessions' events on a quieter voice.",
   "author": { "name": "kiabq" }
