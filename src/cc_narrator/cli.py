@@ -34,6 +34,9 @@ def cmd_narrate(action: str, session_id: str, root: Path) -> str:
         session.set_enabled(False)
         session.request_clear()
         return f"Narration off for {label}."
+    if action == "stop":
+        session.request_clear()
+        return f"Stopped narration for {label}."
     write_focus(root, sid)
     return f"Now narrating {label}."
 
@@ -151,8 +154,10 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("hook", help="handle a Claude Code hook event (JSON on stdin)")
     watch = sub.add_parser("watch", help="run the watcher for one session")
     watch.add_argument("session_id")
-    narrate = sub.add_parser("narrate", help="turn narration on/off or make a session current")
-    narrate.add_argument("action", choices=["on", "off", "focus"])
+    narrate = sub.add_parser(
+        "narrate", help="turn narration on/off, stop what's playing, or make a session current"
+    )
+    narrate.add_argument("action", choices=["on", "off", "stop", "focus"])
     narrate.add_argument("--session", default="")
     sub.add_parser("doctor", help="check API key, voices, and audio device")
     say = sub.add_parser("say", help="speak a test phrase")

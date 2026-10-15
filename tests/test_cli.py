@@ -81,3 +81,14 @@ def test_watch_crash_is_logged_and_returns_1(tmp_path, monkeypatch):
 
 def test_narrate_invalid_session_id(tmp_path):
     assert cmd_narrate("on", "../x", tmp_path) == "No narrator is running for this session."
+
+
+def test_narrate_stop_clears_but_stays_on(tmp_path):
+    session = make_session(tmp_path)
+    session.set_enabled(True)
+    write_focus(tmp_path, "639b0000")
+    message = cmd_narrate("stop", "639b0000", tmp_path)
+    assert message == "Stopped narration for six-three-nine-bravo."
+    assert session.take_clear()
+    assert session.is_enabled()
+    assert read_focus(tmp_path) == "639b0000"

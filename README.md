@@ -59,6 +59,8 @@ finish, fail, or need you, on a second, quieter voice.
 
 - `/narrate off`, `/narrate on`: narration for this session (`/cc-narrator:narrate`
   if another plugin also has a `/narrate` command).
+- `/narrate stop`: cut off what's being read right now. Narration stays on for your
+  next prompt.
 - `/narrate focus`: narrate this session without sending a prompt.
 - Narration is on by default. Set `CC_NARRATOR_ENABLED_BY_DEFAULT=false` to start new
   sessions silent.
