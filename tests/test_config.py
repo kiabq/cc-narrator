@@ -71,3 +71,50 @@ def test_enabled_by_default_parsing(tmp_path, raw, expected):
     env = {**REQUIRED, "CC_NARRATOR_ENABLED_BY_DEFAULT": raw}
     cfg = load_config(env=env, env_path=tmp_path / "x")
     assert cfg.enabled_by_default is expected
+
+
+def test_set_voice_updates_key_and_keeps_other_lines(tmp_path):
+    from cc_narrator.config import set_voice
+
+    path = env_file(
+        tmp_path, "# my notes\nELEVENLABS_API_KEY=k\nCC_NARRATOR_NARRATOR_VOICE_ID=old\n"
+    )
+    set_voice("narrator", "new", path)
+    text = path.read_text()
+    assert "# my notes" in text and "ELEVENLABS_API_KEY=k" in text
+    assert load_config(env={}, env_path=path).narrator_voice_id == "new"
+
+
+def test_set_voice_creates_missing_file(tmp_path):
+    from cc_narrator.config import set_voice
+
+    path = tmp_path / "sub" / ".env"
+    set_voice("announcer", "a1", path)
+    assert load_config(env={}, env_path=path).announcer_voice_id == "a1"
+
+
+def test_reloader_reports_only_after_file_changes(tmp_path):
+    import os
+
+    from cc_narrator.config import ConfigReloader
+
+    path = env_file(tmp_path, "".join(f"{k}={v}\n" for k, v in REQUIRED.items()))
+    reloader = ConfigReloader(env={}, env_path=path)
+    assert reloader.poll() is None
+    path.write_text(path.read_text().replace("narrator\n", "fresh\n"))
+    os.utime(path, (1, 1))
+    cfg = reloader.poll()
+    assert cfg is not None and cfg.narrator_voice_id == "fresh"
+    assert reloader.poll() is None
+
+
+def test_reloader_ignores_invalid_config(tmp_path):
+    import os
+
+    from cc_narrator.config import ConfigReloader
+
+    path = env_file(tmp_path, "".join(f"{k}={v}\n" for k, v in REQUIRED.items()))
+    reloader = ConfigReloader(env={}, env_path=path)
+    path.write_text("ELEVENLABS_API_KEY=key\n")
+    os.utime(path, (1, 1))
+    assert reloader.poll() is None

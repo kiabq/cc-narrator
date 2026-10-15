@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 import logging
 import logging.handlers
+import os
+from collections.abc import Callable, Mapping
 from functools import partial
 from pathlib import Path
 
-from .config import DEFAULT_ENV_PATH, load_config
+from .config import DEFAULT_ENV_PATH, VOICE_KEYS, ConfigReloader, load_config, set_voice
 from .control import DEFAULT_ROOT, SessionState, logs_dir
 from .focus import read_focus, write_focus
 from .label import label_for
@@ -53,6 +55,7 @@ def cmd_watch(session_id: str) -> int:
         return 1
     _setup_logging(logs_dir(root) / f"{session_id}.log")
     try:
+        reloader = ConfigReloader()
         config = load_config()
         if not config.is_valid:
             logging.error("config invalid; missing %s", ", ".join(config.missing))
@@ -72,11 +75,11 @@ def cmd_watch(session_id: str) -> int:
 
         player = Player(config.narrator_volume, config.announcer_volume, on_error)
         worker = AnnouncerWorker(
-            lambda line: play_announcement(line, player, tts, config.announcer_voice_id, root)
+            lambda line: play_announcement(line, player, tts, watcher.announcer_voice_id, root)
         )
         watcher = Watcher(
             session, root, config, tts, player, TranscriptReader(Path(meta.transcript_path)),
-            worker.submit,
+            worker.submit, reload=reloader.poll,
         )
         watchers.append(watcher)
         logging.info("watching %s (%s)", session_id, meta.transcript_path)
@@ -119,6 +122,49 @@ def cmd_doctor() -> int:
     return 0 if ok else 1
 
 
+def cmd_voice(
+    role: str,
+    voice_id: str,
+    env_path: Path,
+    env: Mapping[str, str] | None = None,
+    check: Callable[[str], bool] | None = None,
+) -> tuple[str, int]:
+    env = os.environ if env is None else env
+    if not role:
+        config = load_config(env, env_path)
+        lines = [
+            f"Narrator voice: {config.narrator_voice_id or '(not set)'}",
+            f"Announcer voice: {config.announcer_voice_id or '(not set)'}",
+        ]
+        return "\n".join(lines), 0
+    if not voice_id:
+        return f"Usage: cc-narrate voice {role} VOICE_ID", 1
+
+    if check is None:
+        from .tts import ElevenLabsTTS
+
+        config = load_config(env, env_path)
+        if not config.api_key:
+            return "Missing settings: ELEVENLABS_API_KEY", 1
+        check = ElevenLabsTTS(config.api_key, config.tts_model).voice_exists
+
+    from .tts import TTSError
+
+    try:
+        found = check(voice_id)
+    except TTSError as exc:
+        return f"Could not check voice {voice_id}: {exc}", 1
+    if not found:
+        return f"Voice {voice_id} not found on ElevenLabs; nothing changed.", 1
+
+    set_voice(role, voice_id, env_path)
+    message = f"{role.capitalize()} voice set to {voice_id}."
+    key = VOICE_KEYS[role]
+    if env.get(key):
+        message += f" Note: {key} is set in your environment and overrides the config file."
+    return message, 0
+
+
 def cmd_say(text: str, announcer: bool) -> int:
     config = load_config()
     if config.missing:
@@ -155,6 +201,9 @@ def main(argv: list[str] | None = None) -> int:
     narrate.add_argument("action", choices=["on", "off", "focus"])
     narrate.add_argument("--session", default="")
     sub.add_parser("doctor", help="check API key, voices, and audio device")
+    voice = sub.add_parser("voice", help="show voice IDs, or set one in the config file")
+    voice.add_argument("role", nargs="?", default="", choices=["", *VOICE_KEYS], metavar="ROLE")
+    voice.add_argument("voice_id", nargs="?", default="", metavar="VOICE_ID")
     say = sub.add_parser("say", help="speak a test phrase")
     say.add_argument("text")
     say.add_argument("--announcer", action="store_true")
@@ -171,4 +220,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "doctor":
         return cmd_doctor()
+    if args.command == "voice":
+        message, code = cmd_voice(args.role, args.voice_id, DEFAULT_ENV_PATH)
+        print(message)
+        return code
     return cmd_say(args.text, args.announcer)
