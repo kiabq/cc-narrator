@@ -5,7 +5,7 @@
 
 ## Purpose
 
-Narrate Claude Code's responses aloud with ElevenLabs while working interactively, in a workflow with many concurrent sessions across two workspaces (Ghostty and Superset). One voice narrates the session you are working in; a second, quieter voice announces when other sessions finish, fail, or need attention.
+Narrate Claude Code's responses aloud with ElevenLabs while working interactively, in a workflow with many concurrent sessions. This version targets Ghostty; Superset follows later. One voice narrates the session you are working in; a second, quieter voice announces when other sessions finish, fail, or need attention.
 
 Built first as a personal proof of concept, structured so it can later be published as a Claude Code plugin plus a Python package.
 
@@ -24,6 +24,7 @@ Built first as a personal proof of concept, structured so it can later be publis
 - LLM summarization of replies before speech.
 - A shared background daemon, menu-bar app, or terminal-focus detection.
 - Ticket-system integration for labels (the label interface allows it later).
+- Superset support.
 
 ## Key facts this design relies on
 
@@ -182,8 +183,7 @@ The main rule: narration never interferes with Claude Code. Every hook exits 0, 
 
 ## Workspaces
 
-- **Ghostty:** no special handling.
-- **Superset:** Superset can install its own Claude Code status hooks and play its own completion sounds. Ours run alongside its hooks. Turn off Superset's completion sounds to avoid hearing two alerts. Each task runs in a git worktree, so the branch label is usually meaningful. **To verify:** whether Superset runs Claude Code with a different `HOME` or config dir. If it does, `focus` would not be shared across workspaces. In that case, the state dir must be configurable to one shared absolute path (`CVA_STATE_DIR`).
+This version targets **Ghostty** only, which needs no special handling. Superset support is future work (below).
 
 ## Testing
 
@@ -204,6 +204,8 @@ The main rule: narration never interferes with Claude Code. Every hook exits 0, 
 - Plugin hooks call the `cva` executable (installed with `uv tool install`). The plugin README documents installing it.
 
 ## Future work (out of scope)
+
+- **Superset support.** Superset can install its own Claude Code status hooks and play completion sounds. Ours run alongside them, and Superset's sounds should be turned off to avoid hearing two alerts. Each task runs in a git worktree, so the branch label is usually meaningful. Verify whether Superset runs Claude Code with a different `HOME` or config dir; if so, add `CVA_STATE_DIR` so both workspaces share one state dir and `focus` works across them.
 
 - Labels from Superset workspace names or ticket numbers/titles via additional `label.py` resolvers.
 - Picking up `/rename` mid-session (title is only known at `SessionStart` today).
