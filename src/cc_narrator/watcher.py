@@ -8,6 +8,7 @@ import subprocess
 import threading
 import time
 from collections.abc import Callable, Iterable
+from dataclasses import replace
 from functools import partial
 from pathlib import Path
 from typing import Protocol
@@ -65,6 +66,7 @@ class Watcher:
         now: Callable[[], float] = time.time,
         branch_lookup: Callable[[str], str | None] = git_branch,
         say: Callable[[str], None] = say_aloud,
+        reload: Callable[[], Config | None] = lambda: None,
     ):
         meta = session.read_meta()
         if meta is None:
@@ -80,6 +82,7 @@ class Watcher:
         self._now = now
         self._branch_lookup = branch_lookup
         self._say = say
+        self._reload = reload
         self._speaking = False
         self._auth_reported = False
 
@@ -88,12 +91,24 @@ class Watcher:
             self._meta.session_id, self._meta.session_title, self._meta.cwd, self._branch_lookup
         )
 
+    @property
+    def announcer_voice_id(self) -> str:
+        return self._config.announcer_voice_id
+
     def tick(self) -> bool:
         sid = self.session.session_id
         if not self.session.exists():
             return False
         if self._meta.claude_pid is not None and not pid_alive(self._meta.claude_pid):
             return False
+
+        fresh = self._reload()
+        if fresh is not None:
+            self._config = replace(
+                self._config,
+                narrator_voice_id=fresh.narrator_voice_id,
+                announcer_voice_id=fresh.announcer_voice_id,
+            )
 
         if self.session.take_clear():
             self._player.clear(NARRATOR)

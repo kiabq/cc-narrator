@@ -81,3 +81,56 @@ def test_watch_crash_is_logged_and_returns_1(tmp_path, monkeypatch):
 
 def test_narrate_invalid_session_id(tmp_path):
     assert cmd_narrate("on", "../x", tmp_path) == "No narrator is running for this session."
+
+
+VOICE_ENV = (
+    "ELEVENLABS_API_KEY=k\nCC_NARRATOR_NARRATOR_VOICE_ID=n0\nCC_NARRATOR_ANNOUNCER_VOICE_ID=a0\n"
+)
+
+
+def test_voice_without_args_shows_both(tmp_path):
+    from cc_narrator.cli import cmd_voice
+
+    path = tmp_path / ".env"
+    path.write_text(VOICE_ENV)
+    message, code = cmd_voice("", "", path, env={}, check=lambda v: True)
+    assert code == 0
+    assert "Narrator voice: n0" in message and "Announcer voice: a0" in message
+
+
+def test_voice_sets_checked_id(tmp_path):
+    from cc_narrator.cli import cmd_voice
+    from cc_narrator.config import load_config
+
+    path = tmp_path / ".env"
+    path.write_text(VOICE_ENV)
+    message, code = cmd_voice("narrator", "n1", path, env={}, check=lambda v: v == "n1")
+    assert code == 0 and message == "Narrator voice set to n1."
+    assert load_config(env={}, env_path=path).narrator_voice_id == "n1"
+
+
+def test_voice_rejects_unknown_id(tmp_path):
+    from cc_narrator.cli import cmd_voice
+
+    path = tmp_path / ".env"
+    path.write_text(VOICE_ENV)
+    message, code = cmd_voice("announcer", "bad", path, env={}, check=lambda v: False)
+    assert code == 1 and "not found" in message
+    assert "a0" in path.read_text()
+
+
+def test_voice_warns_when_environment_overrides(tmp_path):
+    from cc_narrator.cli import cmd_voice
+
+    path = tmp_path / ".env"
+    path.write_text(VOICE_ENV)
+    env = {"CC_NARRATOR_NARRATOR_VOICE_ID": "shell"}
+    message, code = cmd_voice("narrator", "n1", path, env=env, check=lambda v: True)
+    assert code == 0 and "CC_NARRATOR_NARRATOR_VOICE_ID" in message and "overrides" in message
+
+
+def test_voice_role_without_id_is_an_error(tmp_path):
+    from cc_narrator.cli import cmd_voice
+
+    message, code = cmd_voice("narrator", "", tmp_path / ".env", env={}, check=lambda v: True)
+    assert code == 1

@@ -60,6 +60,10 @@ finish, fail, or need you, on a second, quieter voice.
 - `/narrate off`, `/narrate on`: narration for this session (`/cc-narrator:narrate`
   if another plugin also has a `/narrate` command).
 - `/narrate focus`: narrate this session without sending a prompt.
+- `/narrate-voice narrator <voice-id>` or `/narrate-voice announcer <voice-id>`: switch
+  a voice (also `cc-narrate voice ...`). The ID is checked with ElevenLabs before it's
+  saved to the config file, and running sessions pick it up right away.
+  `/narrate-voice` alone shows the current voices.
 - Narration is on by default. Set `CC_NARRATOR_ENABLED_BY_DEFAULT=false` to start new
   sessions silent.
 - To stream long output, split it into blocks: narration is spoken per transcript

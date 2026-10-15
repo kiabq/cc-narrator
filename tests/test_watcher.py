@@ -247,3 +247,14 @@ def test_run_recovers_from_a_single_tick_exception(env):
     sleeps = []
     env.watcher.run(sleep=sleeps.append)
     assert len(sleeps) == 1
+
+
+def test_reloaded_config_switches_voices(env):
+    from dataclasses import replace
+
+    pending = [replace(CONFIG, narrator_voice_id="nv2", announcer_voice_id="av2")]
+    env.watcher._reload = lambda: pending.pop() if pending else None
+    env.write("a", "Hi.")
+    env.watcher.tick()
+    assert env.player.spoken() == [f"nv2|{LABEL}: Hi."]
+    assert env.watcher.announcer_voice_id == "av2"

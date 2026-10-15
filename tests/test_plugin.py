@@ -31,3 +31,9 @@ def test_narrate_command_passes_session_id():
     text = (ROOT / "plugin" / "commands" / "narrate.md").read_text()
     assert "cc-narrate narrate $ARGUMENTS --session" in text
     assert "${CLAUDE_SESSION_ID}" in text
+
+
+def test_voice_command_calls_cli():
+    text = (ROOT / "plugin" / "commands" / "narrate-voice.md").read_text()
+    assert "cc-narrate voice $ARGUMENTS" in text
+    assert "Bash(cc-narrate voice:*)" in text
